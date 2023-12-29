@@ -1,63 +1,92 @@
 import 'package:flutter/material.dart';
+import 'add_item.dart';
 import 'item.dart';
+import 'search.dart';
+import 'add_category.dart'; // Import the necessary files for Add Category and Add Products
 
-class Search extends StatefulWidget {
-  const Search({Key? key}) : super(key: key);
+class Home extends StatefulWidget {
+  const Home({super.key});
 
   @override
-  State<Search> createState() => _SearchState();
+  State<Home> createState() => _HomeState();
 }
 
-class _SearchState extends State<Search> {
-  // controller to store product pid
-  final TextEditingController _controllerID = TextEditingController();
-  String _text = ''; // displays product info or error message
+class _HomeState extends State<Home> {
+  bool _load = false;
 
-  @override
-  void dispose() {
-    _controllerID.dispose();
-    super.dispose();
-  }
-
-  // update product info or display error message
-  void update(String text) {
+  void update(bool success) {
     setState(() {
-      _text = text;
+      _load = true;
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load data')));
+      }
     });
   }
 
-  // called when user clicks on the find button
-  void getProduct() {
-    try {
-      int pid = int.parse(_controllerID.text);
-      searchProduct(update, pid); // search asynchronously for product record
-    }
-    catch(e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('wrong arguments')));
-    }
+  @override
+  void initState() {
+    updateProducts(update);
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Page 1'),
+        actions: [
+          IconButton(
+            onPressed: !_load
+                ? null
+                : () {
+              setState(() {
+                _load = false;
+                updateProducts(update);
+              });
+            },
+            icon: const Icon(Icons.refresh),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const Search()),
+                );
+              });
+            },
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const AddCategory()),
+                );
+              });
+            },
+            icon: const Icon(Icons.add_circle), // Example icon for Add Category
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const AddItem()),
+                );
+              });
+            },
+            icon: const Icon(Icons.add), // Example icon for Add Products
+          ),
+        ],
+        title: const Text('Available Products'),
         centerTitle: true,
       ),
-      body: Center(child: Column(children: [
-        const SizedBox(height: 10),
-        SizedBox(width: 200, child: TextField(controller: _controllerID, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Enter ID'))),
-        const SizedBox(height: 10),
-        ElevatedButton(onPressed: getProduct,
-            child: const Text('Find', style: TextStyle(fontSize: 18))),
-        const SizedBox(height: 10),
-        Center(child: SizedBox(width: 200, child: Flexible(child: Text(_text,
-            style: const TextStyle(fontSize: 18))))),
-      ],
-
-      ),
-
+      body: _load
+          ? const ShowItems()
+          : const Center(
+        child: SizedBox(
+          width: 100,
+          height: 100,
+          child: CircularProgressIndicator(),
+        ),
       ),
     );
   }
